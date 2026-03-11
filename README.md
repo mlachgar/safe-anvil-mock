@@ -1,5 +1,9 @@
 # safe-anvil-mock
 
+[![CI](https://github.com/mlachgar/safe-anvil-mock/actions/workflows/ci.yml/badge.svg)](https://github.com/mlachgar/safe-anvil-mock/actions/workflows/ci.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mlachgar_safe-anvil-mock&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=mlachgar_safe-anvil-mock)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=mlachgar_safe-anvil-mock&metric=coverage)](https://sonarcloud.io/summary/new_code?id=mlachgar_safe-anvil-mock)
+
 Standalone Node.js ESM + Express mock of the Safe Transaction Service for local integration tests.
 
 ## Features

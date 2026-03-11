@@ -24,7 +24,7 @@
     "@types/supertest": "^6.0.3",
     "@eslint/js": "^9.23.0",
     "eslint": "^9.23.0",
-    "ethers5": "npm:ethers@5.7.2",
+    "ethers5": "npm:ethers@5.8.0",
     "globals": "^16.0.0",
     "supertest": "^7.1.4",
     "tsx": "^4.20.5",

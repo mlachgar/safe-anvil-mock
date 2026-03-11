@@ -79,6 +79,23 @@ describe('payload.utils', () => {
     });
   });
 
+  it('builds execution payload from nested transaction records', () => {
+    expect(
+      getExecutionPayloadFromRecord({
+        safeTransactionData: {
+          to: '0x00000000000000000000000000000000000000a1',
+          value: '15',
+          data: '0xbeef',
+          operation: 0,
+        },
+      }),
+    ).toEqual({
+      to: '0x00000000000000000000000000000000000000a1',
+      value: '0x0f',
+      data: '0xbeef',
+    });
+  });
+
   it('rejects invalid execution payloads', () => {
     expect(() => getExecutionPayload(undefined)).toThrow('Missing safeTransactionData on proposed transaction');
     expect(() =>

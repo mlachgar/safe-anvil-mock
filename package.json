@@ -1,0 +1,21 @@
+{
+  "name": "safe-anvil-mock",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/app/index.ts",
+    "start": "node dist/app/index.js"
+  },
+  "dependencies": {
+    "ethers": "5.8.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
+}

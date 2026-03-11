@@ -42,6 +42,51 @@ npm install
 npm start
 ```
 
+## Release Docker Hub
+
+This repository can publish Docker images automatically from Git tags matching `v*.*.*`.
+
+### One-time GitHub setup
+
+In the GitHub repository settings, create these Actions secrets:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+The Docker Hub token must be an access token generated from your Docker Hub account.
+
+### Release a new version
+
+1. bump the application version:
+
+```bash
+npm version patch
+# or: npm version minor
+# or: npm version major
+```
+
+2. push the branch and the tag created by `npm version`:
+
+```bash
+git push origin main --follow-tags
+```
+
+3. GitHub Actions will run the publish workflow and push these tags to Docker Hub:
+
+- `x.y.z`
+- `x.y`
+- `x`
+- `latest` for stable releases only
+
+Example for a `v1.2.3` release:
+
+- `safe-anvil-mock:1.2.3`
+- `safe-anvil-mock:1.2`
+- `safe-anvil-mock:1`
+- `safe-anvil-mock:latest`
+
+The workflow uses the Docker Hub repository `${DOCKERHUB_USERNAME}/safe-anvil-mock`.
+
 ## Signature Compatibility
 
 `safe-anvil-mock` accepts the most common Safe proposal signature encodings seen in local integration flows, including differences introduced by client or SDK upgrades.

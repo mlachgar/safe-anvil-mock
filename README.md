@@ -13,6 +13,7 @@ Standalone Node.js ESM + Express mock of the Safe Transaction Service for local 
 - executes proposed calls on Anvil when the threshold is reached
 - exposes `POST /mock/transactions/:safeTxHash/confirm/` for IT flows
 - exposes Safe-like confirmation endpoints for clients that post or list confirmations directly
+- includes integration coverage for signature compatibility across `ethers` client versions
 
 ## Supported Endpoints
 
@@ -40,6 +41,53 @@ The multisig transaction list supports the most common mock-friendly query param
 npm install
 npm start
 ```
+
+## Signature Compatibility
+
+`safe-anvil-mock` accepts the most common Safe proposal signature encodings seen in local integration flows, including differences introduced by client or SDK upgrades.
+
+Supported proposal signature variants:
+
+- `ethers@5` style `signMessage(arrayify(safeTxHash))`
+- `ethers@6` style `signMessage(getBytes(safeTxHash))`
+- `ethers@6` style `signMessage(safeTxHash)` when the hex string itself is signed
+- Safe `ETH_SIGN` signatures using the adjusted `v` value (`31` / `32`)
+
+This compatibility is covered by HTTP integration tests against `POST /v2/safes/:safe/multisig-transactions/`, using both `ethers@5` and `ethers@6`.
+
+If your application upgrades its signing stack and proposals start failing with `Unable to recover signer from signature`, rebuild the container first to make sure the running image includes the latest compatibility fixes.
+
+## Troubleshooting
+
+### `Unable to recover signer from signature`
+
+This usually means one of these things:
+
+- the running container still uses an older build of `safe-anvil-mock`
+- your application changed the way it signs `safeTxHash`
+- the recovered signer is not one of the configured Safe owners
+
+Recommended checks:
+
+1. rebuild and restart the mock container
+2. verify that `SYSTEM_PUBLIC_KEY` or `SAFE_MOCK_OWNERS` contains the proposer address
+3. inspect the request body sent to `POST /v2/safes/:safe/multisig-transactions/`
+4. confirm which signing method your client currently uses
+
+Example rebuild:
+
+```bash
+docker compose build safe-anvil-mock
+docker compose up -d safe-anvil-mock
+```
+
+Useful payload fields to inspect:
+
+- `safeTxHash`
+- `senderAddress`
+- `senderSignature`
+- `signature`
+- `owner`
 
 ## Environment Variables
 

@@ -40,3 +40,22 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t safe-anvil-mock:ci .
+
+  signature-compatibility:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run signature compatibility matrix
+        run: npm run test:signature-compatibility

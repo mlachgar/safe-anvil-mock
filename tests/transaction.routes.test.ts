@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Wallet, ethers } from 'ethers';
+import { Wallet, getBytes } from 'ethers';
 import type { SafeTransactionRecord } from '../src/model/safe-state.model.js';
 import mockConfirmationRoutes from '../src/routes/mock-confirmation.routes.js';
 import safeTransactionRoutes from '../src/routes/safe-transaction.routes.js';
@@ -199,7 +199,7 @@ describe('transaction.routes', () => {
     });
     SafeStoreService.saveTransaction(safe, tx);
 
-    const signature = await wallet.signMessage(ethers.utils.arrayify(tx.safeTxHash));
+    const signature = await wallet.signMessage(getBytes(tx.safeTxHash));
     const response = await request(createApp())
       .post(`/v1/multisig-transactions/${tx.safeTxHash}/confirmations/`)
       .send({

@@ -1,4 +1,4 @@
-import { Wallet, ethers } from 'ethers';
+import { JsonRpcProvider, Wallet, getBytes, verifyMessage } from 'ethers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SafeTransactionRecord } from '../src/model/safe-state.model.js';
 
@@ -50,9 +50,7 @@ describe('SafeExecutionService', () => {
     const confirmation = await SafeExecutionService.buildAutoConfirmation(tx);
 
     expect(confirmation.owner).toBe(confirmer.address.toLowerCase());
-    expect(
-      ethers.utils.verifyMessage(ethers.utils.arrayify(tx.safeTxHash), confirmation.signature).toLowerCase(),
-    ).toBe(confirmer.address.toLowerCase());
+    expect(verifyMessage(getBytes(tx.safeTxHash), confirmation.signature).toLowerCase()).toBe(confirmer.address.toLowerCase());
   });
 
   it('rejects missing confirmer configuration', async () => {
@@ -87,15 +85,13 @@ describe('SafeExecutionService', () => {
     process.env.RPC_URL = 'http://127.0.0.1:8545';
     vi.resetModules();
 
-    const sendSpy = vi.spyOn(ethers.providers.JsonRpcProvider.prototype, 'send').mockImplementation(async (method) => {
+    const sendSpy = vi.spyOn(JsonRpcProvider.prototype, 'send').mockImplementation(async (method) => {
       if (method === 'eth_sendTransaction') {
         return '0x' + 'a'.repeat(64);
       }
       return null;
     });
-    const waitSpy = vi
-      .spyOn(ethers.providers.JsonRpcProvider.prototype, 'waitForTransaction')
-      .mockResolvedValue({ status: 1 } as never);
+    const waitSpy = vi.spyOn(JsonRpcProvider.prototype, 'waitForTransaction').mockResolvedValue({ status: 1 } as never);
 
     const { SafeExecutionService } = await import('../src/services/safe-execution.service.js');
     const tx = createTransaction();
@@ -123,13 +119,13 @@ describe('SafeExecutionService', () => {
     process.env.RPC_URL = 'http://127.0.0.1:8545';
     vi.resetModules();
 
-    const sendSpy = vi.spyOn(ethers.providers.JsonRpcProvider.prototype, 'send').mockImplementation(async (method) => {
+    const sendSpy = vi.spyOn(JsonRpcProvider.prototype, 'send').mockImplementation(async (method) => {
       if (method === 'eth_sendTransaction') {
         return '0x' + 'b'.repeat(64);
       }
       return null;
     });
-    vi.spyOn(ethers.providers.JsonRpcProvider.prototype, 'waitForTransaction').mockResolvedValue({ status: 0 } as never);
+    vi.spyOn(JsonRpcProvider.prototype, 'waitForTransaction').mockResolvedValue({ status: 0 } as never);
 
     const { SafeExecutionService } = await import('../src/services/safe-execution.service.js');
 

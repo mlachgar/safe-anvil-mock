@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Wallet, ethers } from 'ethers';
+import { Wallet, getBytes, keccak256, toUtf8Bytes } from 'ethers';
 import type { SafeState, SafeTransactionRecord } from '../src/model/safe-state.model.js';
 import { SafeTransactionService } from '../src/services/safe-transaction.service.js';
 
@@ -33,8 +33,22 @@ describe('SafeTransactionService', () => {
   });
 
   it('adds the proposer confirmation when a valid signature is present', async () => {
-    const safeTxHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('proposal'));
-    const signature = await ownerWallet.signMessage(ethers.utils.arrayify(safeTxHash));
+    const safeTxHash = keccak256(toUtf8Bytes('proposal'));
+    const signature = await ownerWallet.signMessage(getBytes(safeTxHash));
+
+    const tx = SafeTransactionService.createTransaction(safe, {
+      safeTxHash,
+      senderAddress: ownerWallet.address,
+      senderSignature: signature,
+    });
+
+    expect(tx.confirmations).toHaveLength(1);
+    expect(tx.signatures[ownerWallet.address.toLowerCase()]).toBe(signature);
+  });
+
+  it('accepts proposer signatures created from the hex string payload', async () => {
+    const safeTxHash = keccak256(toUtf8Bytes('proposal'));
+    const signature = await ownerWallet.signMessage(safeTxHash);
 
     const tx = SafeTransactionService.createTransaction(safe, {
       safeTxHash,
@@ -48,8 +62,8 @@ describe('SafeTransactionService', () => {
 
   it('rejects signatures from non-owners', async () => {
     const outsider = new Wallet('0x' + '2'.repeat(64));
-    const safeTxHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('proposal'));
-    const signature = await outsider.signMessage(ethers.utils.arrayify(safeTxHash));
+    const safeTxHash = keccak256(toUtf8Bytes('proposal'));
+    const signature = await outsider.signMessage(getBytes(safeTxHash));
 
     await expect(async () => {
       SafeTransactionService.createTransaction(safe, {
@@ -61,8 +75,8 @@ describe('SafeTransactionService', () => {
   });
 
   it('rejects mismatched declared owner', async () => {
-    const safeTxHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('proposal'));
-    const signature = await ownerWallet.signMessage(ethers.utils.arrayify(safeTxHash));
+    const safeTxHash = keccak256(toUtf8Bytes('proposal'));
+    const signature = await ownerWallet.signMessage(getBytes(safeTxHash));
 
     expect(() =>
       SafeTransactionService.validateConfirmation(

@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { getAddress, isHexString } from 'ethers';
 
 function toPrimitiveString(value: unknown): string | null {
   if (typeof value === 'string') {
@@ -19,7 +19,7 @@ export function normalizeAddress(value: unknown): string | null {
   }
 
   try {
-    return ethers.utils.getAddress(candidate).toLowerCase();
+    return getAddress(candidate).toLowerCase();
   } catch {
     return null;
   }
@@ -32,7 +32,7 @@ export function normalizePrivateKey(value: unknown): string | null {
   }
 
   const normalized = candidate.startsWith('0x') ? candidate : `0x${candidate}`;
-  return ethers.utils.isHexString(normalized, 32) ? normalized : null;
+  return isHexString(normalized, 32) ? normalized : null;
 }
 
 export function splitCsv(value: unknown): string[] {

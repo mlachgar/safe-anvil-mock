@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { toBeHex } from 'ethers';
 import crypto from 'node:crypto';
 import type { SafeTransactionData } from '../model/safe-state.model.js';
 import { normalizeAddress } from './address.utils.js';
@@ -61,7 +61,7 @@ export function getExecutionPayload(data?: SafeTransactionData): { to: string; v
   return {
     to,
     data: typeof data.data === 'string' && data.data ? data.data : '0x',
-    value: ethers.BigNumber.from(data.value || 0).toHexString(),
+    value: toBeHex(data.value || 0),
   };
 }
 

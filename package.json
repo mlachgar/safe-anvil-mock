@@ -9,11 +9,12 @@
     "dev": "tsx src/app/index.ts",
     "lint": "eslint .",
     "start": "node dist/app/index.js",
+    "test:signature-compatibility": "vitest run tests/integration/safe.routes.signature-compatibility.test.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "ethers": "5.8.0",
+    "ethers": "6.16.0",
     "express": "^5.1.0"
   },
   "devDependencies": {
@@ -23,17 +24,12 @@
     "@types/supertest": "^6.0.3",
     "@eslint/js": "^9.23.0",
     "eslint": "^9.23.0",
+    "ethers5": "npm:ethers@5.7.2",
     "globals": "^16.0.0",
     "supertest": "^7.1.4",
     "tsx": "^4.20.5",
     "typescript-eslint": "^8.28.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
-  },
-   "overrides": {
-    "ws": "^7.5.10",
-    "elliptic": "^6.6.1",
-    "hono": "^4.11.10",
-    "lodash": "^4.17.22"
   }
 }

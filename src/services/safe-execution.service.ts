@@ -1,11 +1,11 @@
-import { Wallet, ethers } from 'ethers';
+import { JsonRpcProvider, Wallet, getBytes } from 'ethers';
 import type { SafeTransactionRecord } from '../model/safe-state.model.js';
 import { normalizePrivateKey } from '../utils/address.utils.js';
 import { getExecutionPayloadFromRecord } from '../utils/payload.utils.js';
 
 const fundedBalanceHex = '0x3635C9ADC5DEA00000';
 const rpcUrl = process.env.RPC_URL;
-const provider = rpcUrl ? new ethers.providers.JsonRpcProvider(rpcUrl) : null;
+const provider = rpcUrl ? new JsonRpcProvider(rpcUrl) : null;
 
 class SafeExecutionError extends Error {
   constructor(
@@ -73,7 +73,7 @@ export class SafeExecutionService {
 
     return {
       owner,
-      signature: await wallet.signMessage(ethers.utils.arrayify(tx.safeTxHash)),
+      signature: await wallet.signMessage(getBytes(tx.safeTxHash)),
     };
   }
   private static async sendRpc(method: string, params: unknown[]): Promise<any> {

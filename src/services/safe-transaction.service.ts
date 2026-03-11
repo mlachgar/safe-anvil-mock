@@ -1,6 +1,6 @@
 import type { SafeState, SafeTransactionRecord } from '../model/safe-state.model.js';
 import { getConfirmationInput, getNonce, getSafeTxHash, type ConfirmationInput } from '../utils/payload.utils.js';
-import { recoverOwnerFromSignature } from '../utils/signature.utils.js';
+import { recoverOwnersFromSignature } from '../utils/signature.utils.js';
 
 export class SafeTransactionService {
   static getConfirmationInput(body: Record<string, unknown>): ConfirmationInput {
@@ -8,7 +8,15 @@ export class SafeTransactionService {
   }
 
   static validateConfirmation(safe: SafeState, safeTxHash: string, owner: string | null, signature: string): string {
-    const recoveredOwner = recoverOwnerFromSignature(safeTxHash, signature);
+    const recoveredOwners = recoverOwnersFromSignature(safeTxHash, signature);
+    const recoveredOwner = owner
+      ? recoveredOwners.find((candidate) => candidate === owner) ?? null
+      : recoveredOwners.find((candidate) => safe.owners.includes(candidate)) ?? null;
+
+    if (!recoveredOwner && owner && recoveredOwners.length > 0) {
+      throw new Error(`Signature owner mismatch. expected=${owner} actual=${recoveredOwners[0]}`);
+    }
+
     if (!recoveredOwner) {
       throw new Error('Unable to recover signer from signature');
     }

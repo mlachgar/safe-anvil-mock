@@ -1,19 +1,47 @@
-import { ethers } from 'ethers';
+import { getBytes, hexlify, recoverAddress, verifyMessage } from 'ethers';
 import { normalizeAddress } from './address.utils.js';
 
-export function recoverOwnerFromSignature(safeTxHash: string, signature: string): string | null {
-  const attempts = [
-    () => ethers.utils.verifyMessage(ethers.utils.arrayify(safeTxHash), signature),
-    () => ethers.utils.recoverAddress(safeTxHash, signature),
-  ];
+function withNormalizedV(signature: string): string[] {
+  try {
+    const bytes = getBytes(signature);
+    if (bytes.length === 65 && bytes[64] > 30) {
+      const normalized = new Uint8Array(bytes);
+      normalized[64] -= 4;
+      return [signature, hexlify(normalized)];
+    }
+  } catch {
+    return [signature];
+  }
 
-  for (const attempt of attempts) {
-    try {
-      return normalizeAddress(attempt());
-    } catch {
-      continue;
+  return [signature];
+}
+
+export function recoverOwnersFromSignature(safeTxHash: string, signature: string): string[] {
+  const recoveredOwners = new Set<string>();
+
+  for (const candidateSignature of withNormalizedV(signature)) {
+    const attempts = [
+      () => verifyMessage(getBytes(safeTxHash), candidateSignature),
+      () => verifyMessage(safeTxHash, candidateSignature),
+      () => recoverAddress(safeTxHash, candidateSignature),
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        const recoveredOwner = normalizeAddress(attempt());
+        if (recoveredOwner) {
+          recoveredOwners.add(recoveredOwner);
+        }
+      } catch {
+        continue;
+      }
     }
   }
 
-  return null;
+  return [...recoveredOwners];
+}
+
+export function recoverOwnerFromSignature(safeTxHash: string, signature: string): string | null {
+  const recoveredOwners = recoverOwnersFromSignature(safeTxHash, signature);
+  return recoveredOwners.length === 1 ? recoveredOwners[0] : null;
 }

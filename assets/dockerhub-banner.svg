@@ -1,0 +1,47 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#12324A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="180" y1="120" x2="980" y2="510" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2DD4BF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0.10"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="1200" height="630" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="22" flood-color="#020617" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" rx="28" fill="url(#bg)"/>
+  <circle cx="1010" cy="120" r="180" fill="url(#accent)"/>
+  <circle cx="140" cy="540" r="220" fill="#0F2236" fill-opacity="0.6"/>
+  <rect x="72" y="72" width="1056" height="486" rx="28" fill="#0F172A" fill-opacity="0.72" stroke="#334155" stroke-opacity="0.55"/>
+
+  <g filter="url(#shadow)">
+    <rect x="92" y="98" width="160" height="160" rx="24" fill="#111827" stroke="#334155"/>
+    <rect x="122" y="130" width="46" height="32" rx="8" fill="#60A5FA"/>
+    <rect x="172" y="130" width="46" height="32" rx="8" fill="#93C5FD"/>
+    <rect x="147" y="166" width="46" height="32" rx="8" fill="#BFDBFE"/>
+    <path d="M138 206H202C212.493 206 221 214.507 221 225V229H119V225C119 214.507 127.507 206 138 206Z" fill="#2DD4BF"/>
+  </g>
+
+  <text x="292" y="176" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="700">safe-anvil-mock</text>
+  <text x="292" y="238" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="400">Safe Transaction Service mock</text>
+  <text x="292" y="278" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="400">for local integration tests on Anvil</text>
+
+  <g>
+    <rect x="294" y="336" width="118" height="42" rx="21" fill="#0F2236" stroke="#2DD4BF" stroke-opacity="0.55"/>
+    <text x="330" y="364" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600">Safe</text>
+
+    <rect x="428" y="336" width="124" height="42" rx="21" fill="#0F2236" stroke="#60A5FA" stroke-opacity="0.55"/>
+    <text x="460" y="364" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600">Anvil</text>
+
+    <rect x="568" y="336" width="136" height="42" rx="21" fill="#0F2236" stroke="#93C5FD" stroke-opacity="0.55"/>
+    <text x="602" y="364" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600">Docker</text>
+  </g>
+
+  <line x1="294" y1="430" x2="916" y2="430" stroke="#334155"/>
+
+  <text x="294" y="486" fill="#94A3B8" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="400">Node.js + Express | Docker image for production-like multisig test flows</text>
+</svg>

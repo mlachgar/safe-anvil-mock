@@ -1,17 +1,20 @@
 import express from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Wallet, ethers } from 'ethers';
 import type { SafeTransactionRecord } from '../src/model/safe-state.model.js';
+import mockConfirmationRoutes from '../src/routes/mock-confirmation.routes.js';
+import safeTransactionRoutes from '../src/routes/safe-transaction.routes.js';
 import { SafeExecutionService } from '../src/services/safe-execution.service.js';
 import { SafeStoreService } from '../src/services/safe-store.service.js';
-import transactionRoutes from '../src/routes/transaction.routes.js';
 
 const originalEnv = { ...process.env };
 
 function createApp() {
   const app = express();
   app.use(express.json());
-  app.use(transactionRoutes);
+  app.use(safeTransactionRoutes);
+  app.use(mockConfirmationRoutes);
   return app;
 }
 
@@ -52,10 +55,17 @@ describe('transaction.routes', () => {
   });
 
   it('returns 404 when confirming an unknown transaction', async () => {
-    const response = await request(createApp()).post(`/transactions/${'0x' + '1'.repeat(64)}/confirm/`);
+    const response = await request(createApp()).post(`/mock/transactions/${'0x' + '1'.repeat(64)}/confirm/`);
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ detail: 'Unknown safeTxHash' });
+  });
+
+  it('returns 404 when listing confirmations for an unknown transaction', async () => {
+    const response = await request(createApp()).get(`/v1/multisig-transactions/${'0x' + '1'.repeat(64)}/confirmations/`);
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ detail: 'Not found.' });
   });
 
   it('returns the stored transaction when it is already executed', async () => {
@@ -63,7 +73,7 @@ describe('transaction.routes', () => {
     const tx = createTransaction({ isExecuted: true, executed: true, txStatus: 'SUCCESS' });
     SafeStoreService.saveTransaction(safe, tx);
 
-    const response = await request(createApp()).post(`/transactions/${tx.safeTxHash}/confirm/`);
+    const response = await request(createApp()).post(`/mock/transactions/${tx.safeTxHash}/confirm/`);
 
     expect(response.status).toBe(200);
     expect(response.body.safeTxHash).toBe(tx.safeTxHash);
@@ -95,7 +105,7 @@ describe('transaction.routes', () => {
     });
     const autoSpy = vi.spyOn(SafeExecutionService, 'buildAutoConfirmation');
 
-    const response = await request(createApp()).post(`/transactions/${tx.safeTxHash}/confirm/`);
+    const response = await request(createApp()).post(`/mock/transactions/${tx.safeTxHash}/confirm/`);
 
     expect(response.status).toBe(200);
     expect(executeSpy).toHaveBeenCalledOnce();
@@ -113,7 +123,7 @@ describe('transaction.routes', () => {
     });
     const executeSpy = vi.spyOn(SafeExecutionService, 'executeTransaction').mockResolvedValue(tx);
 
-    const response = await request(createApp()).post(`/transactions/${tx.safeTxHash}/confirm/`);
+    const response = await request(createApp()).post(`/mock/transactions/${tx.safeTxHash}/confirm/`);
 
     expect(response.status).toBe(200);
     expect(response.body.confirmations).toHaveLength(1);
@@ -121,7 +131,7 @@ describe('transaction.routes', () => {
     expect(executeSpy).not.toHaveBeenCalled();
   });
 
-  it('returns 400 when auto confirmation fails', async () => {
+  it('returns 500 when auto confirmation fails', async () => {
     const safe = SafeStoreService.ensureSafe('0x00000000000000000000000000000000000000a1');
     const tx = createTransaction({ confirmationsRequired: 2 });
     SafeStoreService.saveTransaction(safe, tx);
@@ -130,9 +140,130 @@ describe('transaction.routes', () => {
       new Error('Missing SAFE_MOCK_CONFIRMER_PRIVATE_KEY'),
     );
 
-    const response = await request(createApp()).post(`/transactions/${tx.safeTxHash}/confirm/`);
+    const response = await request(createApp()).post(`/mock/transactions/${tx.safeTxHash}/confirm/`);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(500);
     expect(response.body).toEqual({ detail: 'Missing SAFE_MOCK_CONFIRMER_PRIVATE_KEY' });
+  });
+
+  it('returns a transaction from the safe transaction endpoint', async () => {
+    const safe = SafeStoreService.ensureSafe('0x00000000000000000000000000000000000000a1');
+    const tx = createTransaction();
+    SafeStoreService.saveTransaction(safe, tx);
+
+    const response = await request(createApp()).get(`/v2/multisig-transactions/${tx.safeTxHash}/`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.safeTxHash).toBe(tx.safeTxHash);
+  });
+
+  it('lists stored confirmations for a transaction', async () => {
+    const safe = SafeStoreService.ensureSafe('0x00000000000000000000000000000000000000a1');
+    const tx = createTransaction({
+      confirmations: [
+        {
+          owner: '0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a',
+          submissionDate: new Date().toISOString(),
+          signature: '0xsig',
+          signatureType: 'ETH_SIGN',
+        },
+      ],
+      signatures: {
+        '0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a': '0xsig',
+      },
+    });
+    SafeStoreService.saveTransaction(safe, tx);
+
+    const response = await request(createApp()).get(`/v1/multisig-transactions/${tx.safeTxHash}/confirmations/`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.count).toBe(1);
+    expect(response.body.results[0]).toMatchObject({
+      owner: '0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a',
+      signature: '0xsig',
+    });
+  });
+
+  it('stores an explicit signed confirmation', async () => {
+    const wallet = new Wallet('0x' + '11'.repeat(32));
+    process.env = {
+      ...originalEnv,
+      SAFE_MOCK_OWNERS: wallet.address,
+      SAFE_MOCK_THRESHOLD: '2',
+    };
+
+    const safe = SafeStoreService.ensureSafe('0x00000000000000000000000000000000000000a1');
+    const tx = createTransaction({
+      confirmationsRequired: 2,
+      owners: [...safe.owners],
+    });
+    SafeStoreService.saveTransaction(safe, tx);
+
+    const signature = await wallet.signMessage(ethers.utils.arrayify(tx.safeTxHash));
+    const response = await request(createApp())
+      .post(`/v1/multisig-transactions/${tx.safeTxHash}/confirmations/`)
+      .send({
+        owner: wallet.address,
+        signature,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      owner: wallet.address.toLowerCase(),
+      signature,
+      signatureType: 'ETH_SIGN',
+    });
+    expect(SafeStoreService.getTransaction(tx.safeTxHash)?.confirmations).toHaveLength(1);
+  });
+
+  it('can auto-create a confirmation through the confirmations endpoint', async () => {
+    const safe = SafeStoreService.ensureSafe('0x00000000000000000000000000000000000000a1');
+    const tx = createTransaction({ confirmationsRequired: 2 });
+    SafeStoreService.saveTransaction(safe, tx);
+
+    vi.spyOn(SafeExecutionService, 'buildAutoConfirmation').mockResolvedValue({
+      owner: '0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a',
+      signature: '0xauto',
+    });
+    const executeSpy = vi.spyOn(SafeExecutionService, 'executeTransaction').mockResolvedValue(tx);
+
+    const response = await request(createApp()).post(`/v1/multisig-transactions/${tx.safeTxHash}/confirmations/`);
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      owner: '0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a',
+      signature: '0xauto',
+    });
+    expect(executeSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns custom status when mock confirmation route catches a status error', async () => {
+    const safe = SafeStoreService.ensureSafe('0x00000000000000000000000000000000000000a1');
+    const tx = createTransaction({ confirmationsRequired: 2 });
+    SafeStoreService.saveTransaction(safe, tx);
+
+    vi.spyOn(SafeExecutionService, 'buildAutoConfirmation').mockRejectedValue(
+      Object.assign(new Error('Already confirmed'), { status: 409 }),
+    );
+
+    const response = await request(createApp()).post(`/mock/transactions/${tx.safeTxHash}/confirm/`);
+
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ detail: 'Already confirmed' });
+  });
+
+  it('returns custom status when safe confirmation route catches a status error', async () => {
+    const safe = SafeStoreService.ensureSafe('0x00000000000000000000000000000000000000a1');
+    const tx = createTransaction({ confirmationsRequired: 2 });
+    SafeStoreService.saveTransaction(safe, tx);
+
+    vi.spyOn(SafeExecutionService, 'buildAutoConfirmation').mockRejectedValue(
+      Object.assign(new Error('Already confirmed'), { status: 409 }),
+    );
+
+    const response = await request(createApp()).post(`/v1/multisig-transactions/${tx.safeTxHash}/confirmations/`);
+
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ detail: 'Already confirmed' });
   });
 });

@@ -11,7 +11,28 @@ Standalone Node.js ESM + Express mock of the Safe Transaction Service for local 
 - validates Safe proposal signatures
 - stores confirmations in memory
 - executes proposed calls on Anvil when the threshold is reached
-- exposes `POST /transactions/:safeTxHash/confirm/` for IT flows
+- exposes `POST /mock/transactions/:safeTxHash/confirm/` for IT flows
+- exposes Safe-like confirmation endpoints for clients that post or list confirmations directly
+
+## Supported Endpoints
+
+- `GET /health/`
+- `GET /v1/safes/:safe/`
+- `GET /v2/safes/:safe/multisig-transactions/`
+- `POST /v2/safes/:safe/multisig-transactions/`
+- `GET /v2/multisig-transactions/:safeTxHash/`
+- `GET /v1/multisig-transactions/:safeTxHash/confirmations/`
+- `POST /v1/multisig-transactions/:safeTxHash/confirmations/`
+- `POST /mock/transactions/:safeTxHash/confirm/`
+
+The multisig transaction list supports the most common mock-friendly query params:
+
+- `executed`
+- `nonce`
+- `nonce__gte`
+- `ordering` such as `nonce` or `-nonce`
+- `limit`
+- `offset`
 
 ## Run locally
 
@@ -47,7 +68,7 @@ npm start
   Default behavior: if omitted, the threshold is set to the number of configured owners.
 
 - `SAFE_MOCK_CONFIRMER_PRIVATE_KEY`
-  Private key of the second mock owner used when your test calls `POST /transactions/:safeTxHash/confirm/` without providing a signature.
+  Private key of the second mock owner used when your test calls `POST /mock/transactions/:safeTxHash/confirm/` without providing a signature.
   The service signs the Safe tx hash with this key and uses it as the additional confirmation.
 
 - `SAFE_MOCK_OWNERS`
@@ -76,7 +97,7 @@ SYSTEM_PUBLIC_KEY=0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A
 SAFE_MOCK_THRESHOLD=1
 ```
 
-In that mode, the proposal already carries the only required confirmation. The transaction is stored as confirmed, but it is still your test or your workflow that decides when to call `POST /transactions/:safeTxHash/confirm/` if you want to trigger execution in a production-like way.
+In that mode, the proposal already carries the only required confirmation. The transaction is stored as confirmed, but it is still your test or your workflow that decides when to call `POST /mock/transactions/:safeTxHash/confirm/` if you want to trigger execution in a production-like way.
 
 `2/2` integration flow:
 
@@ -91,7 +112,7 @@ In that mode:
 
 1. your application proposes the Safe transaction and signs it as `SYSTEM`
 2. `safe-anvil-mock` verifies the proposer signature
-3. your test calls `POST /transactions/:safeTxHash/confirm/`
+3. your test calls `POST /mock/transactions/:safeTxHash/confirm/`
 4. the mock adds the second signature and executes the call on Anvil
 
 ### Integration With Your Application

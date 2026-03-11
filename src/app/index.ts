@@ -16,10 +16,6 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
 });
 
-app.use((err: Error, _req: express.Request, res: express.Response) => {
-  res.status(400).json({ detail: err.message || 'Invalid request' });
-});
-
 const serverPort = Number(process.env.PORT || 8000);
 app.listen(serverPort, '0.0.0.0', () => {
   console.log(`safe-anvil-mock listening on ${serverPort}`);

@@ -138,4 +138,23 @@ describe('SafeExecutionService', () => {
     );
     expect(sendSpy).toHaveBeenCalledWith('anvil_stopImpersonatingAccount', ['0x00000000000000000000000000000000000000a1']);
   });
+
+  it('returns the same transaction when already executed', async () => {
+    const { SafeExecutionService } = await import('../src/services/safe-execution.service.js');
+    const tx = createTransaction({ executed: true, isExecuted: true });
+
+    await expect(SafeExecutionService.executeTransaction(tx)).resolves.toBe(tx);
+  });
+
+  it('rejects missing rpc configuration', async () => {
+    delete process.env.RPC_URL;
+    vi.resetModules();
+
+    const { SafeExecutionService } = await import('../src/services/safe-execution.service.js');
+
+    await expect(SafeExecutionService.executeTransaction(createTransaction())).rejects.toMatchObject({
+      message: 'Missing RPC_URL configuration',
+      status: 500,
+    });
+  });
 });

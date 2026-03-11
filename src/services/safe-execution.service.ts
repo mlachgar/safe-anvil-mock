@@ -7,6 +7,15 @@ const fundedBalanceHex = '0x3635C9ADC5DEA00000';
 const rpcUrl = process.env.RPC_URL;
 const provider = rpcUrl ? new ethers.providers.JsonRpcProvider(rpcUrl) : null;
 
+class SafeExecutionError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
 export class SafeExecutionService {
   static async executeTransaction(tx: SafeTransactionRecord): Promise<SafeTransactionRecord> {
     if (tx.isExecuted) {
@@ -29,7 +38,7 @@ export class SafeExecutionService {
 
       const receipt = await provider?.waitForTransaction(onChainTxHash);
       if (receipt?.status !== 1) {
-        throw new Error(`Transaction execution failed for ${tx.safeTxHash}`);
+        throw new SafeExecutionError(`Transaction execution failed for ${tx.safeTxHash}`, 500);
       }
 
       const now = new Date().toISOString();
@@ -48,18 +57,18 @@ export class SafeExecutionService {
   static async buildAutoConfirmation(tx: SafeTransactionRecord): Promise<{ owner: string; signature: string }> {
     const confirmerPrivateKey = normalizePrivateKey(process.env.SAFE_MOCK_CONFIRMER_PRIVATE_KEY);
     if (!confirmerPrivateKey) {
-      throw new Error('Missing SAFE_MOCK_CONFIRMER_PRIVATE_KEY');
+      throw new SafeExecutionError('Missing SAFE_MOCK_CONFIRMER_PRIVATE_KEY', 500);
     }
 
     const wallet = new Wallet(confirmerPrivateKey);
     const owner = wallet.address.toLowerCase();
 
     if (!tx.owners.includes(owner)) {
-      throw new Error(`Configured confirmer ${owner} is not declared as a Safe owner`);
+      throw new SafeExecutionError(`Configured confirmer ${owner} is not declared as a Safe owner`, 500);
     }
 
     if (tx.signatures[owner]) {
-      throw new Error(`Configured confirmer ${owner} already confirmed ${tx.safeTxHash}`);
+      throw new SafeExecutionError(`Configured confirmer ${owner} already confirmed ${tx.safeTxHash}`, 409);
     }
 
     return {
@@ -69,7 +78,7 @@ export class SafeExecutionService {
   }
   private static async sendRpc(method: string, params: unknown[]): Promise<any> {
     if (!provider) {
-      throw new Error('Missing RPC_URL configuration');
+      throw new SafeExecutionError('Missing RPC_URL configuration', 500);
     }
 
     return provider.send(method, params);

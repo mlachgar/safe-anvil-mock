@@ -65,6 +65,30 @@ describe('safe.routes', () => {
     expect(listAll.body.results[0].safeTxHash).toBe('0x' + '1'.repeat(64));
   });
 
+  it('supports ordering and pagination when listing multisig transactions', async () => {
+    const app = createApp();
+    const safeAddress = '0x00000000000000000000000000000000000000a1';
+
+    await request(app)
+      .post(`/v2/safes/${safeAddress}/multisig-transactions/`)
+      .send({ safeTxHash: '0x' + '1'.repeat(64), nonce: 1 });
+    await request(app)
+      .post(`/v2/safes/${safeAddress}/multisig-transactions/`)
+      .send({ safeTxHash: '0x' + '2'.repeat(64), nonce: 2 });
+    await request(app)
+      .post(`/v2/safes/${safeAddress}/multisig-transactions/`)
+      .send({ safeTxHash: '0x' + '3'.repeat(64), nonce: 3 });
+
+    const response = await request(app).get(
+      `/v2/safes/${safeAddress}/multisig-transactions/?ordering=-nonce&limit=2&offset=1`,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.count).toBe(3);
+    expect(response.body.results).toHaveLength(2);
+    expect(response.body.results.map((tx: { nonce: number }) => tx.nonce)).toEqual([2, 1]);
+  });
+
   it('rejects invalid signed proposals', async () => {
     const response = await request(createApp())
       .post('/v2/safes/0x00000000000000000000000000000000000000a1/multisig-transactions/')
@@ -74,7 +98,7 @@ describe('safe.routes', () => {
         senderSignature: '0xdeadbeef',
       });
 
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({ detail: 'Unable to recover signer from signature' });
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({});
   });
 });

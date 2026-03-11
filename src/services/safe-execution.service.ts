@@ -1,7 +1,7 @@
 import { Wallet, ethers } from 'ethers';
 import type { SafeTransactionRecord } from '../model/safe-state.model.js';
 import { normalizePrivateKey } from '../utils/address.utils.js';
-import { getExecutionPayload } from '../utils/payload.utils.js';
+import { getExecutionPayloadFromRecord } from '../utils/payload.utils.js';
 
 const fundedBalanceHex = '0x3635C9ADC5DEA00000';
 const rpcUrl = process.env.RPC_URL;
@@ -13,7 +13,7 @@ export class SafeExecutionService {
       return tx;
     }
 
-    const payload = getExecutionPayload(tx.safeTransactionData);
+    const payload = getExecutionPayloadFromRecord(tx as Record<string, unknown>);
     await this.sendRpc('anvil_setBalance', [tx.safe, fundedBalanceHex]);
     await this.sendRpc('anvil_impersonateAccount', [tx.safe]);
 

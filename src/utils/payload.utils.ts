@@ -64,3 +64,17 @@ export function getExecutionPayload(data?: SafeTransactionData): { to: string; v
     value: ethers.BigNumber.from(data.value || 0).toHexString(),
   };
 }
+
+export function getExecutionPayloadFromRecord(record: Record<string, unknown>): { to: string; value: string; data: string } {
+  const nestedData = record.safeTransactionData;
+  if (nestedData && typeof nestedData === 'object') {
+    return getExecutionPayload(nestedData as SafeTransactionData);
+  }
+
+  return getExecutionPayload({
+    to: record.to as string | undefined,
+    value: record.value as string | undefined,
+    data: record.data as string | undefined,
+    operation: typeof record.operation === 'number' ? record.operation : Number(record.operation || 0),
+  });
+}

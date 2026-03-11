@@ -5,6 +5,11 @@ export class SafeStoreService {
   private static readonly safes = new Map<string, SafeState>();
   private static readonly txByHash = new Map<string, SafeTransactionRecord>();
 
+  static reset(): void {
+    this.safes.clear();
+    this.txByHash.clear();
+  }
+
   static ensureSafe(address: string): SafeState {
     const key = String(address).toLowerCase();
     let safe = this.safes.get(key);

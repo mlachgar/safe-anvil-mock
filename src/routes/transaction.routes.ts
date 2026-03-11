@@ -16,9 +16,12 @@ router.get('/v2/multisig-transactions/:safeTxHash/', (req, res) => {
   res.json(tx);
 });
 
+
+router.post('/transactions/:safeTxHash/confirm/', confirmTransaction);
+
 async function confirmTransaction(req: Request, res: Response) {
   const body = req.body || {};
-  const safeTxHash = String(body.safeTxHash || '');
+  const safeTxHash = String(req.params.safeTxHash || body.safeTxHash || '');
   const tx = SafeStoreService.getTransaction(safeTxHash);
 
   if (!tx) {
@@ -33,19 +36,21 @@ async function confirmTransaction(req: Request, res: Response) {
 
   try {
     const input = SafeTransactionService.getConfirmationInput(body);
-    let owner: string;
-    let signature: string;
+    let owner: string | null = null;
+    let signature: string | null = null;
 
     if (input.signature) {
       owner = SafeTransactionService.validateConfirmation(SafeStoreService.ensureSafe(tx.safe), tx.safeTxHash, input.owner, input.signature);
       signature = input.signature;
-    } else {
+    } else if (tx.confirmations.length < tx.confirmationsRequired) {
       const autoConfirmation = await SafeExecutionService.buildAutoConfirmation(tx);
       owner = autoConfirmation.owner;
       signature = autoConfirmation.signature;
     }
 
-    SafeTransactionService.addConfirmation(tx, owner, signature);
+    if (owner && signature) {
+      SafeTransactionService.addConfirmation(tx, owner, signature);
+    }
 
     if (tx.confirmations.length >= tx.confirmationsRequired) {
       await SafeExecutionService.executeTransaction(tx);
@@ -58,8 +63,5 @@ async function confirmTransaction(req: Request, res: Response) {
   res.json(tx);
 }
 
-router.post('/transactions/confirm/', confirmTransaction);
-router.post('/transaction/confirm/', confirmTransaction);
-router.post('/tracsaction/confirm/', confirmTransaction);
 
 export default router;

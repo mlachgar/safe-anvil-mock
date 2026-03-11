@@ -1,21 +1,33 @@
 {
   "name": "safe-anvil-mock",
   "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/app/index.ts",
-    "start": "node dist/app/index.js"
+    "lint": "eslint .",
+    "start": "node dist/app/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "ethers": "5.8.0",
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.4",
     "@types/express": "^5.0.3",
     "@types/node": "^24.5.2",
+    "@types/supertest": "^6.0.3",
+    "@eslint/js": "^9.23.0",
+    "eslint": "^9.23.0",
+    "globals": "^16.0.0",
+    "supertest": "^7.1.4",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.3"
+    "typescript-eslint": "^8.28.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }
